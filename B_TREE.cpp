@@ -8,8 +8,8 @@ struct Node {
     int n1, n2;          // current size of the arrays
     Node **child;   // child array, similar to Node *child[]
     // initialise values
-    Node(int order) : ar(new int[order-1]),  n1(0), n2(0), child(new Node*[order]) {
-        memset(ar, 0, (order-1) * 4);
+    Node(int order) : ar(new int[order]),  n1(0), n2(0), child(new Node*[order+1]) {
+        memset(ar, 0, order * 4);
         memset(child, NULL, order * 4);
     }
 };
@@ -40,35 +40,66 @@ public:
     }
 
 private:
-    void _insert(int num, Node *root)  {
-        // if this node has no children, insertion will be done here
-        if (root->n2 == 0)  {
-            // if this node can accomodate this number, insert it
-            if (root->n1 < N1)    {
-                int idx = lower_bound(num, root);
+    // void _insert(int num, Node *root)  {
+    //     // if this node has no children, insertion will be done here
+    //     if (root->n2 == 0)  {
+    //         // if this node can accomodate this number, insert it
+    //         if (root->n1 < N1)    {
+    //             int idx = lower_bound(num, root);
+    //             insertion_sort(num, root, idx);
+    //             return;
+    //         }
+    //         else    {   // cannot accomodate this number
+    //             // find at what position it will be inserted
+    //             int idx = lower_bound(num, root);
+    //         }
+    //     }
+    //     // otherwise
+    // }
+
+    Node* _insert(int num, Node *root)  {
+        // locate key
+        int idx = upper_bound(num, root);
+        if (idx>0 && root->ar[idx-1] == num)  {  // element found
+            return nullptr; // finished
+        }
+        // check if child node exists
+        if (idx < root->n2)   {
+            Node *res = _insert(num, root->child[idx]);
+        }
+        // else try to insert here
+        else    {
+            if (root->n1 < N1)  {   // can insert in this node
                 insertion_sort(num, root, idx);
-                return;
+                return nullptr; // finished
             }
-            else    {   // cannot accomodate this number
-                // find at what position it will be inserted
-                int idx = lower_bound(num, root);
-                
+            else    {   // node is full, split and do stuff
+                // num is to be inserted at idx
+                // find middle element after insertion
+                insertion_sort(num, root, idx);
+                // this element will become parent
+                int mid = root->ar[N1/2];
+                // create new node, and copy contents
+                Node *right_node = new Node(order);
+                for (int i=N1/2+1, j=0; i<N1; ++j, ++i)   {
+                    right_node->ar[j] = root->ar[i];
+                }
+
             }
         }
+        
 
         // otherwise
     }
 
-    int lower_bound(int num, Node *root)    {
+    int upper_bound(int num, Node *root)    {
         int low = 0, high = root->n1;
         while (low < high)  {
             int mid = (low + high) / 2;
-            if (root->ar[mid] < num)
+            if (root->ar[mid] <= num)
                 low = mid+1;
-            else if (root->ar[mid] > num)
-                high = mid;
             else
-                return mid;
+                high = mid;
         }
         return low;
     }
