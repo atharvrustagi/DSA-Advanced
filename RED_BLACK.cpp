@@ -17,7 +17,7 @@ class RB_TREE   {
     Node *root;
 
     // returns a node address, and if it needs to be rotated or not
-    pair<Node*, bool> _insert(Node* root, int key, bool is_left_child=0)    {
+    pair<Node*, bool> _insert(Node* root, int &key, bool is_left_child=0)    {
         // find appropriate place for the key
         if (key < root->val)    {
             if (root->left) {
@@ -83,7 +83,7 @@ class RB_TREE   {
         return {root, 0};
     }
 
-    // performs right rotation on root, and returns new root
+    // performs right rotation on given root, and returns new root
     Node* rotate_right(Node *root)   {
         Node *left_child = root->left;
         Node *cright = left_child->right;
@@ -92,13 +92,23 @@ class RB_TREE   {
         return left_child;
     }
 
-    // performs left rotation on root, and returns new root
+    // performs left rotation on given root, and returns new root
     Node* rotate_left(Node *root)   {
         Node* right_child = root->right;
         Node *cleft = right_child->left;
         root->right = cleft;
         right_child->left = root;
         return right_child;
+    }
+
+    bool _find(int &key, Node* root)  {
+        if (!root)
+            return 0;
+        if (root->val == key)
+            return 1;
+        if (key < root->val)
+            return _find(key, root->left);
+        return _find(key, root->right);
     }
 
     int get_black_height(Node* root)  {
@@ -127,6 +137,14 @@ class RB_TREE   {
         return _check_red(root->left) && _check_red(root->right);
     }
 
+    void _inorder(Node* root)   {
+        if (!root)
+            return;
+        _inorder(root->left);
+        cout << root->val << " ";
+        _inorder(root->right);
+    }
+
 public:
     RB_TREE() : root(nullptr)  {}
 
@@ -141,6 +159,10 @@ public:
         root = node;
         if (root->red)
             root->red = 0;
+    }
+
+    bool find(int key)  {
+        return _find(key, root);
     }
 
     bool check_red()    {
@@ -180,6 +202,11 @@ public:
         }
     }
 
+    void inorder()  {
+        cout << endl;
+        cout << "Inorder traversal: ";
+        _inorder(root);
+    }
 };
 
 int main()  {
@@ -187,22 +214,23 @@ int main()  {
     int n;
     cout << "Enter number of insertions to be done: ";
     cin >> n;
-    for (int i=1; i<=n; ++i)    {
+    for (int i=0; i<n; ++i)    {
         int v;
         v = rand() % int(1e9+7);
-        // cin >> v;
         cout << v << " ";
+        // cin >> v;
         t.insert(v);
     }
     t.level_order();
     int h = t.check_height();
     if (h != -1)
-        cout << "\nBlack height equal as: " << h;
+        cout << "\nBlack height maintained as: " << h;
     else
         cout << "\nBlack height violated";
     if (t.check_red())
         cout << "\nRed-Black property maintained";
     else
         cout << "\nRed-Black property violated";
+    t.inorder();
     return 0;
 }
