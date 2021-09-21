@@ -1,6 +1,5 @@
 #include<iostream>
-#include<utility>   // for std::pair
-#include<queue>     // for level order traversal
+#include<queue>
 using namespace std;
 
 // Node of a Red-Black Tree
@@ -15,13 +14,16 @@ struct Node {
 
 class RB_TREE   {
     Node *root;
+    int tree_size;
 
     // returns a node address, and if it needs to be rotated or not
-    pair<Node*, bool> _insert(Node* root, int &key, bool is_left_child=0)    {
+    int _insert(Node* root, int &key, bool is_left_child=0)    {
         // find appropriate place for the key
         if (key < root->val)    {
             if (root->left) {
-                auto [new_root, rotate] = _insert(root->left, key, 1);
+                int address = _insert(root->left, key, 1);
+                Node *new_root = (Node*)abs(address);
+                bool rotate = address<0;
                 root->left = new_root;
                 if (rotate) {
                     // as it came from the left child, a right rotation must be done
@@ -32,23 +34,29 @@ class RB_TREE   {
                     root->left->red = 0;
                 }
             }
-            else    // make new node
+            else  {  // make new node
                 root->left = new Node(key, 1);
+                ++tree_size;
+            }
         }
         else if (key > root->val)   {
             if (root->right)    {
-                auto [new_root, rotate] = _insert(root->right, key, 0);
+                int address = _insert(root->right, key, 0);
+                Node *new_root = (Node*)abs(address);
+                bool rotate = address<0;
                 root->right = new_root;
                 if (rotate) {
                     root = rotate_left(root);
                     root->right->red = 0;
                 }
             }
-            else
+            else    {
                 root->right = new Node(key, 1);
+                ++tree_size;
+            }
         }
         else    // key already exists
-            return {root, 0};
+            return (int)root;
 
         // check for problems
         
@@ -58,29 +66,29 @@ class RB_TREE   {
             root->red = 1;
             root->left->red = 0;
             root->right->red = 0;
-            return {root, 0};
+            return (int)root;
         }
 
         // now, if root is black, then no problem
         if (!root->red)
-            return {root, 0};
+            return (int)root;
         
         // check for double red problem in the left child
         if (root->left && root->left->red)  {
             // if root is a left child, then no internal rotation required
             if (is_left_child)
-                return {root, 1};
+                return -(int)root;
             // otherwise, internal rotation to the right
-            return {rotate_right(root), 1};
+            return -(int)rotate_right(root);
         }
         // check for double red in the right child
         else if (root->right && root->right->red)   {
             if (!is_left_child)
-                return {root, 1};
-            return {rotate_left(root), 1};
+                return -(int)root;
+            return -(int)rotate_left(root);
         }
         // no rotations required
-        return {root, 0};
+        return (int)root;
     }
 
     // performs right rotation on given root, and returns new root
@@ -146,7 +154,11 @@ class RB_TREE   {
     }
 
 public:
-    RB_TREE() : root(nullptr)  {}
+    RB_TREE() : root(nullptr), tree_size(0)  {}
+
+    int size()  {
+        return tree_size;
+    }
 
     // Insert a key method
     void insert(int key)    {
@@ -155,8 +167,8 @@ public:
             return;
         }
 
-        auto [node, rotate] = _insert(root, key);
-        root = node;
+        int address = _insert(root, key);
+        root = (Node*)address;
         if (root->red)
             root->red = 0;
     }
@@ -216,12 +228,12 @@ int main()  {
     cin >> n;
     for (int i=0; i<n; ++i)    {
         int v;
-        v = rand() % int(1e9+7);
+        v = (rand() * rand()) % int(1e6+3);
         cout << v << " ";
         // cin >> v;
         t.insert(v);
     }
-    t.level_order();
+    // t.level_order();
     int h = t.check_height();
     if (h != -1)
         cout << "\nBlack height maintained as: " << h;
@@ -231,6 +243,7 @@ int main()  {
         cout << "\nRed-Black property maintained";
     else
         cout << "\nRed-Black property violated";
+    printf("\nNumber of elements: %d", t.size());
     t.inorder();
     return 0;
 }
