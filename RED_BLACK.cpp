@@ -1,6 +1,6 @@
 #include<iostream>
-#include<utility>
-#include<queue>
+#include<utility>   // for std::pair
+#include<queue>     // for level order traversal
 using namespace std;
 
 // Node of a Red-Black Tree
