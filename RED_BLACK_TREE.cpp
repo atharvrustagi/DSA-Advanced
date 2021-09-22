@@ -1,5 +1,6 @@
 #include<iostream>
 #include<queue>
+#define ll long long
 using namespace std;
 
 // Node of a Red-Black Tree
@@ -16,12 +17,55 @@ class RB_TREE   {
     Node *root;
     int tree_size;
 
+    ll _erase(int &key, Node* root) {
+        // locate the key
+        if (key < root->val)    {
+            _erase(key, root->left);
+        }
+        else if (key > root->val)   {
+            _erase(key, root->right);
+        }
+        // this is the key
+        else    {
+            // if this is a leaf node
+            if (!root->left && !root->right)    {
+                // delete this node simply
+                delete root;
+                // best case, red node with no children
+                if (root->red)
+                    return 0;
+
+                // black node
+                // indicate to parent that there is double black problem
+                return -1;
+            }
+
+            // root has only 1 child, so it cannot be black (think about it)
+            // child is red if it exists, replace the node with child
+            if (root->left)  {
+                root->val = root->left->val;
+                delete root->left;
+                root->left = nullptr;
+                return 0;
+            }
+            if (root->right) {
+                root->val = root->right->val;
+                delete root->right;
+                root->right = nullptr;
+                return 0;
+            }
+        }
+
+        // handle problems
+
+    }
+
     // returns a node address, and if it needs to be rotated or not
-    int _insert(Node* root, int &key, bool is_left_child=0)    {
+    ll _insert(Node* root, int &key, bool is_left_child=0)    {
         // find appropriate place for the key
         if (key < root->val)    {
             if (root->left) {
-                int address = _insert(root->left, key, 1);
+                ll address = _insert(root->left, key, 1);
                 Node *new_root = (Node*)abs(address);
                 bool rotate = address<0;
                 root->left = new_root;
@@ -41,7 +85,7 @@ class RB_TREE   {
         }
         else if (key > root->val)   {
             if (root->right)    {
-                int address = _insert(root->right, key, 0);
+                ll address = _insert(root->right, key, 0);
                 Node *new_root = (Node*)abs(address);
                 bool rotate = address<0;
                 root->right = new_root;
@@ -56,39 +100,39 @@ class RB_TREE   {
             }
         }
         else    // key already exists
-            return (int)root;
+            return (ll)root;
 
         // check for problems
-        
+
         // if both children exist and are red, then this node must be black
         if (root->left && root->right && root->left->red && root->right->red) {
             // change the children and parent colors
             root->red = 1;
             root->left->red = 0;
             root->right->red = 0;
-            return (int)root;
+            return (ll)root;
         }
-
+ 
         // now, if root is black, then no problem
         if (!root->red)
-            return (int)root;
+            return (ll)root;
         
         // check for double red problem in the left child
         if (root->left && root->left->red)  {
             // if root is a left child, then no internal rotation required
             if (is_left_child)
-                return -(int)root;
+                return -(ll)root;
             // otherwise, internal rotation to the right
-            return -(int)rotate_right(root);
+            return -(ll)rotate_right(root);
         }
         // check for double red in the right child
         else if (root->right && root->right->red)   {
             if (!is_left_child)
-                return -(int)root;
-            return -(int)rotate_left(root);
+                return -(ll)root;
+            return -(ll)rotate_left(root);
         }
         // no rotations required
-        return (int)root;
+        return (ll)root;
     }
 
     // performs right rotation on given root, and returns new root
@@ -109,11 +153,11 @@ class RB_TREE   {
         return right_child;
     }
 
-    bool _find(int &key, Node* root)  {
+    Node* _find(int &key, Node* root)  {
         if (!root)
             return 0;
         if (root->val == key)
-            return 1;
+            return root;
         if (key < root->val)
             return _find(key, root->left);
         return _find(key, root->right);
@@ -160,19 +204,41 @@ public:
         return tree_size;
     }
 
-    // Insert a key method
+    // Erases a key if present
+    void erase(int key) {
+        // find if key exists
+        Node* node = _find(key, root);
+        if (!node)
+            return;
+        // find the inorder predecessor or successor
+        // we'll find the predecessor
+        if (node->left) {
+            node = node->left;
+            while (node->right)
+                node = node->right;
+        }
+        int predecessor = node->val;
+        _erase(predecessor, root);
+        // replace node if it still exists
+        if (node)
+            node->val = predecessor;
+    }
+
+    // Inserts a key
     void insert(int key)    {
         if (!root)  {
             root = new Node(key, 0);
+            ++tree_size;
             return;
         }
 
-        int address = _insert(root, key);
+        ll address = _insert(root, key);
         root = (Node*)address;
         if (root->red)
             root->red = 0;
     }
 
+    // Returns true if key is found in the tree, else false
     bool find(int key)  {
         return _find(key, root);
     }
@@ -221,19 +287,37 @@ public:
     }
 };
 
+void randomize(int n, int *ar)  {
+    for (int i=0; i<n; ++i)
+        ar[i] = i+1;
+    while (n > 0)  {
+        // choose a random index
+        int idx = rand() % n;
+        // swap
+        int tmp = ar[n-1];
+        ar[n-1] = ar[idx];
+        ar[idx] = tmp;
+        --n;
+    }
+}
+
 int main()  {
     RB_TREE t = RB_TREE();
     int n;
     cout << "Enter number of insertions to be done: ";
     cin >> n;
+    int ar[n];
+    randomize(n, ar);
     for (int i=0; i<n; ++i)    {
         int v;
-        v = (rand() * rand()) % int(1e6+3);
-        cout << v << " ";
+        v = ar[i];
+        // v = i+1;
+        // v = (rand()) % int(1e2);
         // cin >> v;
+        // cout << v << " ";
         t.insert(v);
     }
-    // t.level_order();
+    t.level_order();
     int h = t.check_height();
     if (h != -1)
         cout << "\nBlack height maintained as: " << h;
@@ -244,6 +328,13 @@ int main()  {
     else
         cout << "\nRed-Black property violated";
     printf("\nNumber of elements: %d", t.size());
-    t.inorder();
+    // t.inorder();
+
+    // while (1)   {
+    //     cout << "\nElement to be searched: ";
+    //     int e;
+    //     cin >> e;
+    //     cout << t.find(e);
+    // }
     return 0;
 }
