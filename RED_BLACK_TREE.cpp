@@ -51,13 +51,13 @@ class RB_TREE   {
                 root->val = root->left->val;
                 delete root->left;
                 root->left = nullptr;
-                return 0;
+                return (ll)root;
             }
             if (root->right) {
                 root->val = root->right->val;
                 delete root->right;
                 root->right = nullptr;
-                return 0;
+                return (ll)root;
             }
         }
 
@@ -79,22 +79,83 @@ class RB_TREE   {
                         return (ll)root;    // problem solved
                     }
                     // root is black, double black problem still exists
-                    root->red = 0;
                     return -(ll)root;
                 }
 
-                // 1 of the children is red
-                
+                // case - 1.2, near child of sibling is red
+                if (rchild->left && rchild->left->red) {
+                    // perform right rotation, and exchange colors
+                    rchild = rotate_right(rchild);
+                    root->right = rchild;
+                    rchild->red = 0;
+                    rchild->right->red = 1;
+                }
 
+                // case - 1.3, far child of sibling is red
+                // exchange colors of root and rchild
+                swap(root->red, rchild->red);
+                // left rotate root
+                root = rotate_left(root);
+                // make right child black
+                root->right->red = 0;
+                return (ll)root;
             }
 
+            // case - 2, sibling is red (tough bc its not intuitive)
+            // make sibling black
+            rchild->red = 0;
+            // rotate left
+            root = rotate_left(root);
+            // turn displaced node to red if it exists
+            if (root->left->right)
+                root->left->right->red = 1;
+            return (ll)root;
+        }
+        
+        // if not from_left, mirror of above cases
+        Node* lchild = root->left;
+        if (!lchild->red)   {
+            if ((!lchild->right || !lchild->right->red) && (!lchild->left || !lchild->left->red))   {
+                // make sibling red
+                lchild->red = 1;
+                if (root->red)  {
+                    // make root black
+                    root->red = 0;
+                    return (ll)root;    // problem solved
+                }
+                // root is black, double black problem still exists
+                root->red = 0;
+                return -(ll)root;
+            }
 
+            // case - 1.2, near child of sibling is red
+            if (lchild->right && lchild->right->red) {
+                // perform left rotation, and exchange colors
+                lchild = rotate_left(lchild);
+                root->left = lchild;
+                lchild->red = 0;
+                lchild->left->red = 1;
+            }
+
+            // case - 1.3, far child of sibling is red
+            // exchange colors of root and lchild
+            swap(root->red, lchild->red);
+            // right rotate root
+            root = rotate_right(root);
+            // make left child black
+            root->left->red = 0;
+            return (ll)root;
         }
 
-
-        
-
-
+        // case - 2, sibling is red (tough bc its not intuitive)
+        // make sibling black
+        lchild->red = 0;
+        // rotate right
+        root = rotate_right(root);
+        // turn displaced node to red if it exists
+        if (root->right->left)
+            root->right->left->red = 1;
+        return (ll)root;
     }
 
     // returns a node address, and if it needs to be rotated or not
@@ -243,8 +304,10 @@ public:
 
     // Erases a key if present
     void erase(int key) {
+        if (!root)
+            return;
         // find if key exists
-        Node* node = _find(key, root);
+        Node* node = _find(key, root), *key_node = node;
         if (!node)
             return;
         // find the inorder predecessor or successor
@@ -255,10 +318,13 @@ public:
                 node = node->right;
         }
         int predecessor = node->val;
-        _erase(predecessor, root);
+        // printf("Deleting: %d. Predecessor: %d\n", key, predecessor);
+        root = (Node*)abs(_erase(predecessor, root));
+        if (root->red)
+            root->red = 0;
         // replace node if it still exists
-        if (node)
-            node->val = predecessor;
+        if (predecessor != key)
+            key_node->val = predecessor;
     }
 
     // Inserts a key
@@ -367,11 +433,12 @@ int main()  {
     printf("\nNumber of elements: %d", t.size());
     // t.inorder();
 
-    // while (1)   {
-    //     cout << "\nElement to be searched: ";
-    //     int e;
-    //     cin >> e;
-    //     cout << t.find(e);
-    // }
+    while (1)   {
+        cout << "\nElement to be deleted: ";
+        int e;
+        cin >> e;
+        t.erase(e);
+        t.level_order();
+    }
     return 0;
 }
