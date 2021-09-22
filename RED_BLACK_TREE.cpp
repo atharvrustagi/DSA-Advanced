@@ -18,12 +18,17 @@ class RB_TREE   {
     int tree_size;
 
     ll _erase(int &key, Node* root) {
+        ll res;
+        bool from_left = 0;
         // locate the key
         if (key < root->val)    {
-            _erase(key, root->left);
+            res = _erase(key, root->left);
+            root->left = (res == -1) ? nullptr : (Node*)abs(res);
+            from_left = 1;
         }
         else if (key > root->val)   {
-            _erase(key, root->right);
+            res = _erase(key, root->right);
+            root->right = (res == -1) ? nullptr : (Node*)abs(res);
         }
         // this is the key
         else    {
@@ -56,7 +61,39 @@ class RB_TREE   {
             }
         }
 
-        // handle problems
+        if (res >= 0)
+            return (ll)root;
+
+        // handle double black problem
+        if (from_left)  {   // check right subtree
+            Node* rchild = root->right;
+            // case - 1, sibling is black
+            if (!rchild->red)   {
+                // case - 1.1, sibling is black with black children
+                if ((!rchild->left || !rchild->left->red) && (!rchild->right || !rchild->right->red))   {
+                    // make sibling red
+                    rchild->red = 1;
+                    if (root->red)  {
+                        // make root black
+                        root->red = 0;
+                        return (ll)root;    // problem solved
+                    }
+                    // root is black, double black problem still exists
+                    root->red = 0;
+                    return -(ll)root;
+                }
+
+                // 1 of the children is red
+                
+
+            }
+
+
+        }
+
+
+        
+
 
     }
 
@@ -307,11 +344,11 @@ int main()  {
     cout << "Enter number of insertions to be done: ";
     cin >> n;
     int ar[n];
-    randomize(n, ar);
+    // randomize(n, ar);
     for (int i=0; i<n; ++i)    {
         int v;
-        v = ar[i];
-        // v = i+1;
+        // v = ar[i];
+        v = i+1;
         // v = (rand()) % int(1e2);
         // cin >> v;
         // cout << v << " ";
