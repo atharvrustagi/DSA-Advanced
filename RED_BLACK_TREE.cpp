@@ -1,7 +1,9 @@
 #include<iostream>
 #include<queue>
+#include<set>       // for comparison purposes
 #define ll long long
 using namespace std;
+
 
 // Node of a Red-Black Tree
 struct Node {
@@ -17,9 +19,14 @@ class RB_TREE   {
     Node *root;
     int tree_size;
 
-    ll _erase(int &key, Node* root) {
+    ll _erase(int &key, Node* root, bool skip = 0, bool pass = 0) {
         ll res;
         bool from_left = 0;
+        if (skip)   {
+            from_left = pass;
+            res = -1;
+            goto skipped;
+        }
         // locate the key
         if (key < root->val)    {
             res = _erase(key, root->left);
@@ -34,10 +41,11 @@ class RB_TREE   {
         else    {
             // if this is a leaf node
             if (!root->left && !root->right)    {
-                // delete this node simply
+                bool r = root->red;
+                // delete this node
                 delete root;
                 // best case, red node with no children
-                if (root->red)
+                if (r)
                     return 0;
 
                 // black node
@@ -64,6 +72,7 @@ class RB_TREE   {
         if (res >= 0)
             return (ll)root;
 
+        skipped:
         // handle double black problem
         if (from_left)  {   // check right subtree
             Node* rchild = root->right;
@@ -101,15 +110,15 @@ class RB_TREE   {
                 return (ll)root;
             }
 
-            // case - 2, sibling is red (tough bc its not intuitive)
-            // make sibling black
-            rchild->red = 0;
-            // rotate left
+            // case - 2, sibling is red (tough)
+            // swap colors of root and sibling
+            swap(root->red, rchild->red);
+            // left rotate
             root = rotate_left(root);
-            // turn displaced node to red if it exists
-            if (root->left->right)
-                root->left->right->red = 1;
-            return (ll)root;
+            // reapply cases for the left child, and pass on as if it came from left
+            res = _erase(key, root->left, 1, 1);
+            root->left = (res == -1) ? nullptr : (Node*)abs(res);
+            return (res < 0) ? -(ll)root : (ll)root;
         }
         
         // if not from_left, mirror of above cases
@@ -124,7 +133,6 @@ class RB_TREE   {
                     return (ll)root;    // problem solved
                 }
                 // root is black, double black problem still exists
-                root->red = 0;
                 return -(ll)root;
             }
 
@@ -147,15 +155,15 @@ class RB_TREE   {
             return (ll)root;
         }
 
-        // case - 2, sibling is red (tough bc its not intuitive)
-        // make sibling black
-        lchild->red = 0;
-        // rotate right
+        // case - 2, sibling is red (tough)
+        // swap colors of root and sibling
+        swap(root->red, lchild->red);
+        // right rotate
         root = rotate_right(root);
-        // turn displaced node to red if it exists
-        if (root->right->left)
-            root->right->left->red = 1;
-        return (ll)root;
+        // reapply cases for the left child, and pass on as if it came from left
+        res = _erase(key, root->right, 1, 0);
+        root->right = (res == -1) ? nullptr : (Node*)abs(res);
+        return (res < 0) ? -(ll)root : (ll)root;
     }
 
     // returns a node address, and if it needs to be rotated or not
@@ -287,12 +295,12 @@ class RB_TREE   {
         return _check_red(root->left) && _check_red(root->right);
     }
 
-    void _inorder(Node* root)   {
+    void _inorder(Node* root, int *ar, int &i)   {
         if (!root)
             return;
-        _inorder(root->left);
-        cout << root->val << " ";
-        _inorder(root->right);
+        _inorder(root->left, ar, i);
+        ar[i++] = root->val;
+        _inorder(root->right, ar, i);
     }
 
 public:
@@ -300,31 +308,6 @@ public:
 
     int size()  {
         return tree_size;
-    }
-
-    // Erases a key if present
-    void erase(int key) {
-        if (!root)
-            return;
-        // find if key exists
-        Node* node = _find(key, root), *key_node = node;
-        if (!node)
-            return;
-        // find the inorder predecessor or successor
-        // we'll find the predecessor
-        if (node->left) {
-            node = node->left;
-            while (node->right)
-                node = node->right;
-        }
-        int predecessor = node->val;
-        // printf("Deleting: %d. Predecessor: %d\n", key, predecessor);
-        root = (Node*)abs(_erase(predecessor, root));
-        if (root->red)
-            root->red = 0;
-        // replace node if it still exists
-        if (predecessor != key)
-            key_node->val = predecessor;
     }
 
     // Inserts a key
@@ -339,6 +322,30 @@ public:
         root = (Node*)address;
         if (root->red)
             root->red = 0;
+    }
+
+    // Erases a key if present
+    void erase(int key) {
+        // find if key exists
+        Node* node = _find(key, root), *key_node = node;
+        if (!node)
+            return;
+        --tree_size;
+        // find the inorder predecessor or successor
+        // we'll find the predecessor
+        if (node->left) {
+            node = node->left;
+            while (node->right)
+                node = node->right;
+        }
+        int predecessor = node->val;
+        ll res = _erase(predecessor, root);
+        root = (res == -1) ? nullptr : (Node*)abs(res);
+        if (root && root->red)
+            root->red = 0;
+        // replace node if it still exists
+        if (predecessor != key)
+            key_node->val = predecessor;
     }
 
     // Returns true if key is found in the tree, else false
@@ -383,10 +390,9 @@ public:
         }
     }
 
-    void inorder()  {
-        cout << endl;
-        cout << "Inorder traversal: ";
-        _inorder(root);
+    void inorder(int *ar)  {
+        int i = 0;
+        _inorder(root, ar, i);
     }
 };
 
@@ -405,40 +411,50 @@ void randomize(int n, int *ar)  {
 }
 
 int main()  {
-    RB_TREE t = RB_TREE();
+    RB_TREE tree;
+    set<int> s;
     int n;
-    cout << "Enter number of insertions to be done: ";
+    cout << "Number of elements: ";
     cin >> n;
     int ar[n];
-    // randomize(n, ar);
-    for (int i=0; i<n; ++i)    {
-        int v;
-        // v = ar[i];
-        v = i+1;
-        // v = (rand()) % int(1e2);
-        // cin >> v;
-        // cout << v << " ";
-        t.insert(v);
+    bool random = 1;
+    cout << "\nOrder of insertion: ";
+    if (random)
+        randomize(n, ar);
+    for (int i=0; i<n; ++i) {
+        if (!random)    {
+            cin >> ar[i];
+            // ar[i] = i+1;
+        }
+        else
+            cout << ar[i] << " ";
+        tree.insert(ar[i]);
+        s.insert(ar[i]);
     }
-    t.level_order();
-    int h = t.check_height();
-    if (h != -1)
-        cout << "\nBlack height maintained as: " << h;
-    else
-        cout << "\nBlack height violated";
-    if (t.check_red())
-        cout << "\nRed-Black property maintained";
-    else
-        cout << "\nRed-Black property violated";
-    printf("\nNumber of elements: %d", t.size());
-    // t.inorder();
-
-    while (1)   {
-        cout << "\nElement to be deleted: ";
-        int e;
-        cin >> e;
-        t.erase(e);
-        t.level_order();
+    for (int i=0; i<n; ++i)   {
+        int r = rand()%n;
+        tree.erase(r);
+        s.erase(r);
+        int h = tree.check_height();
+        if (h == -1 || !tree.check_red())   {
+            cout << "\nRed-Black property violated!";
+            break;
+        }
+        if (tree.size() != s.size())    {
+            cout << "\nSize not equal!";
+            break;
+        }
     }
+    int inord[n], i=0;
+    tree.inorder(inord);
+    cout << endl;
+    for (auto e: s) {
+        if (inord[i++] != e)  {
+            cout << "\nInorder traversal failed!";
+            break;
+        }
+    }
+    cout << endl << "Done!";
+    // cin >> n;
     return 0;
 }
