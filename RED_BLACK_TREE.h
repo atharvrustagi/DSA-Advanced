@@ -314,8 +314,21 @@ class RB_TREE   {
         _inorder(root->right, ar, i);
     }
 
+    void _clear(Node *root)   {
+        if (!root)
+            return;
+        _clear(root->left);
+        _clear(root->right);
+        delete root;
+    }
 public:
     RB_TREE() : root(nullptr), tree_size(0)  {}
+
+    // Deletes all the elements in the tree
+    void clear()    {
+        _clear(root);
+        tree_size = 0;
+    }
 
     // Returns the number of elements present in the data structure
     int size()  {
