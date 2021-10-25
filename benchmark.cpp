@@ -1,12 +1,13 @@
 #include<iostream>
 #include<set>
-#include "RED_BLACK_TREE.h"
+#include "RB_TREE.h"
 #include<chrono>
 using namespace std;
 
-int *ar;
+int *ar, n, iters;
+long long duration1 = 0, duration2 = 0;
 
-bool verify(RB_TREE& tree, set<int> &s)   {
+bool verify(rb_tree& tree, set<int> &s)   {
     bool r = 1;
     int h = tree.check_height();
     if (h == -1)    {
@@ -39,48 +40,70 @@ void randomize(int n)  {
     }
 }
 
+long long eval_set()   {
+    auto start = chrono::high_resolution_clock::now();
+    // evaluation of std::set
+    set<int> s;
+    for (int i=0; i<n; ++i)
+        s.insert(ar[i]);
+    // cout << "\nSet size after insertion is " << s.size();
+
+    // remove half the elements
+    for (int i=0; i<n; i+=2)
+        s.erase(ar[i]);
+    
+    // cout << "\nSet size after deletion is " << s.size();
+    // delete all elements
+    s.clear();
+    return chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - start).count();
+}
+
+double eval_tree()  {
+    auto start = chrono::high_resolution_clock::now();
+    // evaluation of rb_tree
+    rb_tree tree;
+    for (int i=0; i<n; ++i)
+        tree.insert(ar[i]);
+    // cout << "\nTree size after insertion is " << tree.size();
+
+    // remove half the elements
+    for (int i=0; i<n; i+=2)
+        tree.erase(ar[i]);
+    
+    // cout << "\nTree size after deletion is " << tree.size();
+    // delete all elements
+    tree.clear();
+    return chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - start).count();
+}
+
+void timeit()   {
+    int d1, d2;
+
+    for (int i=0; i<n; ++i)
+        ar[i] = (rand() * rand()) % (int)(1e9+7);
+
+    d1 = eval_set();
+    d2 = eval_tree();
+    duration1 += d1;
+    duration2 += d2;
+    // printf("\nTime taken for std::set operations: %llf seconds", d1 / 1e6);
+    // printf("\nTime taken for rb_tree operations: %llf seconds\n\n", d2 / 1e6);
+}
+
 int main()  {
-    int n;
-    bool eval_set = 1;
-    n = 1000000;
+    bool eval_set = 0;
+    n = 500000;
     ar = new int[n];
+    iters = 20;
     // cout << "Enter the number of elements: ";
     // cin >> n;
     // cout << "Evaluate tree or set? (1 for set, 0 for tree): ";
     // cin >> eval_set;
-
-    RB_TREE tree;
-    set<int> s;
-    for (int i=0; i<n; ++i) {
-        int r = (rand() * rand()) % (int)(1e9+7);
-        // cout << r << " ";
-        ar[i] = r;
-        if (eval_set) s.insert(r);
-        else          tree.insert(r);
+    while (iters--) {
+        timeit();
+        cout << iters << ".";
     }
-
-    // start timer
-    auto start = chrono::high_resolution_clock::now();
-    // start code
-    if (eval_set)  cout << "\nSet size after insertion is " << s.size();
-    else           cout << "\nTreeSet size after insertion is " << tree.size();
-    // shuffle ar
-    randomize(n);
-    // remove half the elements randomly
-    for (int i=0, n2=n/2; i<n2; ++i) {
-        int r = ar[i];
-        if (eval_set) s.erase(r);
-        else          tree.erase(r);
-    }
-    if (eval_set)  cout << "\nSet size after deletion is " << s.size();
-    else           cout << "\nTreeSet size after deletion is " << tree.size();
-
-    if (eval_set)  s.clear();
-    else           tree.clear();
-
-    // end code
-    auto stop = chrono::high_resolution_clock::now();
-    double duration = chrono::duration_cast<chrono::microseconds>(stop - start).count();
-    printf("\nTime taken for operations: %llf seconds", duration / 1e6);
+    printf("\nstd::set time: %llf seconds.", duration1 / 1e6);
+    printf("\nrb_tree time: %llf seconds.", duration2 / 1e6);
     return 0;
 }
