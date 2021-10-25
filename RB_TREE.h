@@ -9,7 +9,7 @@ struct Node {
 };
 
 // Red-Black tree implementation
-class RB_TREE   {
+class rb_tree   {
     Node *root;
     int tree_size;
 
@@ -322,7 +322,7 @@ class RB_TREE   {
         delete root;
     }
 public:
-    RB_TREE() : root(nullptr), tree_size(0)  {}
+    rb_tree() : root(nullptr), tree_size(0)  {}
 
     // Deletes all the elements in the tree
     void clear()    {
