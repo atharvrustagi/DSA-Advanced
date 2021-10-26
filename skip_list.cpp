@@ -8,33 +8,29 @@ struct Node {
         n = 0;
         val = v;
         next = new Node*[10];
+        memset(next, 0, 10 * sizeof(next));
     }
     Node(int v, int s)  {
         n = 0;
         val = v;
         next = new Node*[s];
+        memset(next, 0, s * sizeof(next));
     }
 };
-
-Node *newnode(int v, int s) {
-    Node *node = new Node(v, s);
-    for (int i=0; i<s; ++i)
-        node->next[i] = 0;
-    return node;
-}
 
 class skip_list {
     Node *head;
     int size;
 
-    void _insert(int &key, Node *cur, Node **ar, int n) {
+    void _insert(int key, Node *cur, Node **ar, int n) {
         if (cur->val == key)
             return;
         // check current node's next pointers
         while (n > -1)  {
             // if next is bigger, go down
-            if (cur->next[n]->val > key)
+            if (cur->next[n]->val > key)    {
                 ar[n--] = cur;
+            }
             else    {
                 // go right and then return
                 _insert(key, cur->next[n], ar, n);
@@ -42,7 +38,7 @@ class skip_list {
             }
         }
         // if n is -1, insert here
-        Node *node = newnode(key, size);
+        Node *node = new Node(key, size);
         // update lists
         do  {
             if (++n == size)
@@ -54,11 +50,22 @@ class skip_list {
         } while (rand() & 1);
     }
 
+    bool _find(int key, Node *head, int n) {
+        if (head->val == key)
+            return 1;
+        while (n > -1)  {
+            if (head->next[n]->val <= key)
+                return _find(key, head->next[n], n);
+            --n;
+        }
+        return 0;
+    }
+
 public:
     skip_list() {
         size = 10;
-        head = newnode(INT_MIN, size);
-        Node *tail = newnode(INT_MAX, size);
+        head = new Node(INT_MIN, size);
+        Node *tail = new Node(INT_MAX, size);
         for (int i=0; i<size; ++i)
             head->next[i] = tail;
         head->n = size;
@@ -66,8 +73,8 @@ public:
     }
     skip_list(int size) {
         this->size = size;
-        head = newnode(INT_MIN, size);
-        Node *tail = newnode(INT_MAX, size);
+        head = new Node(INT_MIN, size);
+        Node *tail = new Node(INT_MAX, size);
         for (int i=0; i<size; ++i)
             head->next[i] = tail;
         head->n = size;
@@ -81,7 +88,12 @@ public:
         _insert(key, head, ar, size-1);
     }
 
-    void print()    {
+    // finds a key
+    bool find(int key)  {
+        return _find(key, head, size-1);
+    }
+
+    void show()    {
         Node *node = head->next[0];
         while (node->next[0])    {
             for (int i=0; i<node->n; ++i)
@@ -117,7 +129,18 @@ int main()  {
     int n;
     cin >> n;
     skip_list s;
-    for (int i=0; i<n; ++i)
-        s.insert(rand() % 1000);
-    s.print();
+    unordered_set<int> us;
+    for (int i=0; i<n; ++i) {
+        int r = (rand() * rand()) % (int)1e9;
+        us.insert(r);
+        s.insert(r);
+    }
+    // s.print_list();
+    // s.show();
+    for (int i=0; i<1000; ++i)  {
+        if (s.find(i) != us.count(i))
+            cout << "\nFail " << i;
+    }
+    cout << "done";
+    return 0;
 }
