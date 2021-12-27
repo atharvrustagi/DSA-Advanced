@@ -324,9 +324,14 @@ class rb_tree   {
 public:
     rb_tree() : root(nullptr), tree_size(0)  {}
 
+    ~rb_tree()  {
+        clear();
+    }
+
     // Deletes all the elements in the tree
     void clear()    {
         _clear(root);
+        root = nullptr;
         tree_size = 0;
     }
 
