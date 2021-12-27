@@ -75,7 +75,7 @@ bool test5(int t_no)    {
 }
 
 bool test6(int t_no)    {
-    // deletion test
+    // deletion test 
     printf("Running test %d: ", t_no);
     rb_tree t;
     t.erase(5);
