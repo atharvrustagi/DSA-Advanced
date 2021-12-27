@@ -321,6 +321,13 @@ class rb_tree   {
         _clear(root->right);
         delete root;
     }
+
+    void _print_inorder(Node *root) {
+        if (!root)  return;
+        _print_inorder(root->left);
+        printf("%d ", root->val);
+        _print_inorder(root->right);
+    }
 public:
     rb_tree() : root(nullptr), tree_size(0)  {}
 
@@ -402,5 +409,10 @@ public:
     void inorder(int *ar)  {
         int i = 0;
         _inorder(root, ar, i);
+    }
+
+    void _print()   {
+        _print_inorder(root);
+        printf("\n");
     }
 };
