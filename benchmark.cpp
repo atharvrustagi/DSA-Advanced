@@ -1,10 +1,11 @@
 #include<iostream>
+#include<conio.h>
 #include<set>
 #include "RB_TREE.h"
 #include<chrono>
 using namespace std;
 
-int *ar, n, iters;
+int *ar, n;
 long long duration1 = 0, duration2 = 0;
 
 bool verify(rb_tree& tree, set<int> &s)   {
@@ -91,19 +92,32 @@ void timeit()   {
 }
 
 int main()  {
-    bool eval_set = 0;
-    n = 500000;
+    n = 100000;
+    int iters = 20;
     ar = new int[n];
-    iters = 20;
-    // cout << "Enter the number of elements: ";
-    // cin >> n;
-    // cout << "Evaluate tree or set? (1 for set, 0 for tree): ";
-    // cin >> eval_set;
-    while (iters--) {
+    
+    // loading screen thingy
+    int bar_size = 50;
+    printf("\x1b[2J");
+    printf("\x1b[%d;%dH", 0, 0);
+    cout << "Running benchmark...\n|";
+    for (int i=0; i<bar_size; ++i)
+        cout << '*';
+    cout << "|";
+    int pos = 2;
+    printf("\x1b[%d;%dH", 2, pos);
+    for (int it=1; it<=iters; ++it) {
         timeit();
-        cout << iters << ".";
+        int pos2 = bar_size * it / iters;
+        while (pos <= pos2)  {
+            cout << "=>";
+            ++pos;
+            printf("\x1b[%d;%dH", 2, pos);
+        }
     }
-    printf("\nstd::set time: %llf seconds.", duration1 / 1e6);
-    printf("\nrb_tree time: %llf seconds.", duration2 / 1e6);
+    printf("\nstd::set time for operations: %llf seconds.", duration1 / 1e6);
+    printf("\nrb_tree time for operations:  %llf seconds.", duration2 / 1e6);
+    printf("\nPress any key to exit.");
+    getch();
     return 0;
 }
